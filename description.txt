@@ -1,0 +1,6 @@
+I will be making a quadcopter for arduino platform. 
+
+Features:
+- lightweight (up to 80g - 90g)
+- fast, with a thrust of 160g.
+- Bluetooth controllable.
