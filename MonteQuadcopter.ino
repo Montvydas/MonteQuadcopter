@@ -7,8 +7,8 @@ SoftwareSerial mySerial (7, 8); //RX, TX
 
 #define FL_MOTOR 3
 #define FR_MOTOR 9
-#define BL_MOTOR 10
-#define BR_MOTOR 11
+#define BR_MOTOR 10
+#define BL_MOTOR 11
 
 //---------------------------------PID------------------------------------
 //Define Variables we'll be connecting to
@@ -110,8 +110,8 @@ void setup() {
 
   pinMode(FL_MOTOR, OUTPUT);
   pinMode(FR_MOTOR, OUTPUT);
-  pinMode(BL_MOTOR, OUTPUT);
   pinMode(BR_MOTOR, OUTPUT);
+  pinMode(BL_MOTOR, OUTPUT);
 
   pinMode(A0, INPUT);
 
@@ -319,24 +319,24 @@ float smoothBattery (float betteryLevel[]) {
 void setSpeed(int val) {
   analogWrite(FL_MOTOR, val);
   analogWrite(FR_MOTOR, val);
-  analogWrite(BL_MOTOR, val);
   analogWrite(BR_MOTOR, val);
+  analogWrite(BL_MOTOR, val);
 }
 
 void checkMotor(int motor) {
   analogWrite(FL_MOTOR, 0);
   analogWrite(FR_MOTOR, 0);
-  analogWrite(BL_MOTOR, 0);
   analogWrite(BR_MOTOR, 0);
+  analogWrite(BL_MOTOR, 0);
 
   if (motor == 0)
     analogWrite(FL_MOTOR, 10);
   if (motor == 1)
     analogWrite(FR_MOTOR, 10);
   if (motor == 2)
-    analogWrite(BL_MOTOR, 10);
-  if (motor == 3)
     analogWrite(BR_MOTOR, 10);
+  if (motor == 3)
+    analogWrite(BL_MOTOR, 10);
 }
 
 
@@ -356,23 +356,23 @@ void stabilise (int* currSpeed, int* actSpeed, float rollDiff, float pitchDiff) 
 void checkIndividual (int motor, int* actSpeed) {
   analogWrite(FL_MOTOR, 0);
   analogWrite(FR_MOTOR, 0);
-  analogWrite(BL_MOTOR, 0);
   analogWrite(BR_MOTOR, 0);
+  analogWrite(BL_MOTOR, 0);
 
   if (motor == 0)
     analogWrite(FL_MOTOR, actSpeed[0]);
   if (motor == 1)
     analogWrite(FR_MOTOR, actSpeed[1]);
   if (motor == 2)
-    analogWrite(BL_MOTOR, actSpeed[2]);
+    analogWrite(BR_MOTOR, actSpeed[2]);
   if (motor == 3)
-    analogWrite(BR_MOTOR, actSpeed[3]);
+    analogWrite(BL_MOTOR, actSpeed[3]);
 }
 
 
 void runIndividual (int* actSpeed) {
   analogWrite(FL_MOTOR, actSpeed[0]);
   analogWrite(FR_MOTOR, actSpeed[1]);
-  analogWrite(BL_MOTOR, actSpeed[2]);
-  analogWrite(BR_MOTOR, actSpeed[3]);
+  analogWrite(BR_MOTOR, actSpeed[2]);
+  analogWrite(BL_MOTOR, actSpeed[3]);
 }
