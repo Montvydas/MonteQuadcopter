@@ -1,6 +1,10 @@
-I will be making a quadcopter for arduino platform. 
+Software for controlling a Bluetooth micro quadcopter. 
 
-Features:
-- lightweight (up to 80g - 90g)
-- fast, with a thrust of 160g.
-- Bluetooth controllable.
+Connections:
+Pin 3 - Front Left motor
+Pin 9 - Front Right motor
+Pin 10 - Back Right motor
+Pin 11 - Back Left motor
+
+Pin A0 - Battery level reader
+Pin A4/A5 - I2C Communication with MPU6050
