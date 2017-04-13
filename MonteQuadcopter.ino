@@ -67,8 +67,10 @@ void dmpDataReady() {
 }
 
 
-#define BAT_SMOOTHING 10
-float batteryLevel[BAT_SMOOTHING];
+#define ALPHA 0.1
+#define MULTIPLIER 6.67
+float motorBattery;
+
 int targetSpeed[4];
 
 // ================================================================
@@ -83,12 +85,10 @@ void setup() {
 
   //Enable internal reference of 1.1V
   //initialise battery level array with current battery level value
+  pinMode(A0, INPUT);
   analogReference(INTERNAL);
-  float tmp = analogRead(A0) / 1023.0 * 6.6;
-  for (int i = 0; i < BAT_SMOOTHING; i++) {
-    batteryLevel[i] = tmp;
-  }
-
+//  float tmp = analogRead(A0) / 1023.0 * MULTIPLIER;
+  motorBattery = 4.2;
   //------------------------------PID----------------------------------
   //initialize the variables we're linked to
   pitchInput = 0.0;
@@ -112,8 +112,6 @@ void setup() {
   pinMode(FR_MOTOR, OUTPUT);
   pinMode(BR_MOTOR, OUTPUT);
   pinMode(BL_MOTOR, OUTPUT);
-
-  pinMode(A0, INPUT);
 
   // join I2C bus (I2Cdev library doesn't do this automatically)
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -264,6 +262,7 @@ void loop() {
 
     int actSpeed[4];
     stabilise (targetSpeed, actSpeed, rollOutput, pitchOutput);
+//    targetSpeed = actSpeed; // should this behere or not?
 
     Serial.print("pitchInput=");
     Serial.print(pitchInput);
@@ -287,8 +286,9 @@ void loop() {
     runIndividual (actSpeed);
     //            checkIndividual(myReading, actSpeed);
     //------------------------------------------------------------------------------------
-    float av = smoothBattery(batteryLevel);
-    mySerial.print(av);
+    motorBattery = smoothBattery(motorBattery, analogRead(A0) / 1023.0 * MULTIPLIER, ALPHA);
+    
+    mySerial.print(motorBattery);
     mySerial.print("   ypr   ");
     mySerial.print(ypr[0] * 180 / M_PI);
     mySerial.print("   ");
@@ -304,16 +304,8 @@ void loop() {
   delay(100);
 }
 
-float smoothBattery (float betteryLevel[]) {
-  float sum = 0;
-  float tmp = analogRead(A0) / 1023.0 * 6.6;
-  for (int i = 0; i < BAT_SMOOTHING - 1; i++) {
-    sum += batteryLevel[i];
-    batteryLevel[i + 1] = batteryLevel[i];
-  }
-  batteryLevel[0] = tmp;
-  sum += tmp;
-  return sum / BAT_SMOOTHING;
+float smoothBattery (float prevEntry, float newEntry, float alpha) {
+  return (1-alpha) * prevEntry + alpha * newEntry;
 }
 
 void setSpeed(int val) {
@@ -345,7 +337,6 @@ void stabilise (int* currSpeed, int* actSpeed, float rollDiff, float pitchDiff) 
   actSpeed[1] = (int) currSpeed[1] + (rollDiff / 2) + (pitchDiff / 2);
   actSpeed[2] = (int) currSpeed[2] - (rollDiff / 2) + (pitchDiff / 2);  //actual Speed is calculated as follows +- half rollDiff +- half pitchDiff
   actSpeed[3] = (int) currSpeed[3] - (rollDiff / 2) - (pitchDiff / 2);
-
 
   for (int i = 0; i < 4; i ++) {
     if (actSpeed[i] < 0 )
