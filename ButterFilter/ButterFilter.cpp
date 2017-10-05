@@ -48,6 +48,10 @@ float ButterFilter::getFs()
     return this->fs;
 }
 
+float ButterFilter::getLastFiltered(){
+    return this->lastFiltered;
+}
+
 // Is used to apply a filter and get a new value
 float ButterFilter::filter(float data)
 {
@@ -55,5 +59,6 @@ float ButterFilter::filter(float data)
     this->v[1] = this->v[2];
     this->v[2] = this->a[0] * data + this->a[2] * this->v[0] + this->a[1] * this->v[1];
     
-    return (this->v[0] + this->v[2])+ 2 * this->v[1];
+    this->lastFiltered = (this->v[0] + this->v[2])+ 2 * this->v[1];
+    return this->lastFiltered;
 }
