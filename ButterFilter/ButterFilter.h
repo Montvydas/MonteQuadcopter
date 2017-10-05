@@ -12,13 +12,17 @@ class ButterFilter
 {
     public:
     ButterFilter();
-    void setup(float, float);
+    void begin(float, float);
     float* getCoeffs();
     float filter(float);
+    float getCutoff();
+    float getFs();
     
     private:
-    float[] v = {0, 0, 0};
-    float[] a = {0, 0, 0};
+    float v[3];
+    float a[3];
+    float cutoff;
+    float fs;
 };
 
 #endif
