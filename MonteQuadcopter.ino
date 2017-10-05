@@ -321,22 +321,6 @@ void setSpeed(int val) {
   analogWrite(BL_MOTOR, val);
 }
 
-void checkMotor(int motor) {
-  analogWrite(FL_MOTOR, 0);
-  analogWrite(FR_MOTOR, 0);
-  analogWrite(BR_MOTOR, 0);
-  analogWrite(BL_MOTOR, 0);
-
-  if (motor == 0)
-    analogWrite(FL_MOTOR, 10);
-  if (motor == 1)
-    analogWrite(FR_MOTOR, 10);
-  if (motor == 2)
-    analogWrite(BR_MOTOR, 10);
-  if (motor == 3)
-    analogWrite(BL_MOTOR, 10);
-}
-
 void stabilise (int* currSpeed, int* actSpeed, float rollDiff, float pitchDiff) {
   actSpeed[0] = (int) currSpeed[0] + (rollDiff) - (pitchDiff);  //each motor has actual Speed and speed at which we want them to fly...
   actSpeed[1] = (int) currSpeed[1] + (rollDiff) + (pitchDiff);
