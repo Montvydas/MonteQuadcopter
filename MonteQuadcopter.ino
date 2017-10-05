@@ -199,6 +199,8 @@ void loop() {
     for (int i = 0; i < 4; i++) {
       targetSpeed[i] = myReading;
     }
+
+    runIndividual(targetSpeed);
     while (mySerial.available())  //flushing anything that wasn't read
       mySerial.read();
     //      runIndividual(myReading);
@@ -287,7 +289,7 @@ void loop() {
     Serial.print(F("   mot[3]="));
     Serial.println(actSpeed[3]);
 
-    runIndividual (actSpeed);
+    //runIndividual (actSpeed);
     //            checkIndividual(myReading, actSpeed);
     //------------------------------------------------------------------------------------
     motorBattery = smoothBattery(motorBattery, analogRead(A0) / 1023.0 * MULTIPLIER, ALPHA);
