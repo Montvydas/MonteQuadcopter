@@ -3,8 +3,12 @@ SoftwareSerial mySerial (7, 8); //RX, TX
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
 #include <PID_v1.h>
+#include <EEPROM.h>
 //#include "MPU6050.h" // not necessary if using MotionApps include file
 
+
+#define ADDR_PITCH_OFFSET 0
+#define ADDR_ROLL_OFFSET 1
 #define FL_MOTOR 3
 #define FR_MOTOR 9
 #define BR_MOTOR 10
@@ -16,7 +20,7 @@ double rollSetpoint, rollInput, rollOutput;
 double pitchSetpoint, pitchInput, pitchOutput;
 
 //Define the aggressive and conservative Tuning Parameters
-double consKp = 1, consKi = 0.05, consKd = 0.25;
+double consKp = 0.5, consKi = 0.05, consKd = 0.05;
 
 PID pitchPID(&rollInput, &rollOutput, &rollSetpoint, consKp, consKi, consKd, DIRECT);
 PID rollPID(&pitchInput, &pitchOutput, &pitchSetpoint, consKp, consKi, consKd, DIRECT);
@@ -203,7 +207,7 @@ void loop() {
   }
 
   // wait for MPU interrupt or extra packet(s) available
-  //    while (!mpuInterrupt && fifoCount < packetSize) {
+//      while (!mpuInterrupt && fifoCount < packetSize) {
   // if you are really paranoid you can frequently test in between other
   // stuff to see if mpuInterrupt is true, and if so, "break;" from the
   // while() loop to immediately process the MPU data
@@ -242,7 +246,7 @@ void loop() {
 
     //----------------------------------------PID-----------------------------------------
     if (myReading == 0) {
-      Serial.println("CALIBRATING");
+      Serial.println(F("CALIBRATING"));
       ypr_cal[0] = ypr[0] * 180 / M_PI;
       ypr_cal[1] = ypr[1] * 180 / M_PI;
       ypr_cal[2] = ypr[2] * 180 / M_PI;
@@ -264,32 +268,34 @@ void loop() {
     stabilise (targetSpeed, actSpeed, rollOutput, pitchOutput);
 //    targetSpeed = actSpeed; // should this behere or not?
 
-    Serial.print("pitchInput=");
+    Serial.print(F("pitchInput="));
     Serial.print(pitchInput);
-    Serial.print("   pitchOutput=");
+    Serial.print(F("   pitchOutput="));
     Serial.print(pitchOutput);
 
-    Serial.print("   rollInput=");
+    Serial.print(F("   rollInput="));
     Serial.print(rollInput);
-    Serial.print("   rollOutput=");
+    Serial.print(F("   rollOutput="));
     Serial.print(rollOutput);
 
-    Serial.print("   mot[0]=");
+    Serial.print(F("   mot[0]="));
     Serial.print(actSpeed[0]);
-    Serial.print("   mot[1]=");
+    Serial.print(F("   mot[1]="));
     Serial.print(actSpeed[1]);
-    Serial.print("   mot[2]=");
+    Serial.print(F("   mot[2]="));
     Serial.print(actSpeed[2]);
-    Serial.print("   mot[3]=");
+    Serial.print(F("   mot[3]="));
     Serial.println(actSpeed[3]);
 
     runIndividual (actSpeed);
     //            checkIndividual(myReading, actSpeed);
     //------------------------------------------------------------------------------------
     motorBattery = smoothBattery(motorBattery, analogRead(A0) / 1023.0 * MULTIPLIER, ALPHA);
-    
+    if (motorBattery < 2.0){
+      mySerial.println (F("WARNING! LOW BATTERY!"));
+    }
     mySerial.print(motorBattery);
-    mySerial.print("   ypr   ");
+    mySerial.print(F("   ypr   "));
     mySerial.print(ypr[0] * 180 / M_PI);
     mySerial.print("   ");
     mySerial.print(ypr[1] * 180 / M_PI);
@@ -331,12 +337,11 @@ void checkMotor(int motor) {
     analogWrite(BL_MOTOR, 10);
 }
 
-
 void stabilise (int* currSpeed, int* actSpeed, float rollDiff, float pitchDiff) {
-  actSpeed[0] = (int) currSpeed[0] + (rollDiff / 2) - (pitchDiff / 2);  //each motor has actual Speed and speed at which we want them to fly...
-  actSpeed[1] = (int) currSpeed[1] + (rollDiff / 2) + (pitchDiff / 2);
-  actSpeed[2] = (int) currSpeed[2] - (rollDiff / 2) + (pitchDiff / 2);  //actual Speed is calculated as follows +- half rollDiff +- half pitchDiff
-  actSpeed[3] = (int) currSpeed[3] - (rollDiff / 2) - (pitchDiff / 2);
+  actSpeed[0] = (int) currSpeed[0] + (rollDiff) - (pitchDiff);  //each motor has actual Speed and speed at which we want them to fly...
+  actSpeed[1] = (int) currSpeed[1] + (rollDiff) + (pitchDiff);
+  actSpeed[2] = (int) currSpeed[2] - (rollDiff) + (pitchDiff);  //actual Speed is calculated as follows +- half rollDiff +- half pitchDiff
+  actSpeed[3] = (int) currSpeed[3] - (rollDiff) - (pitchDiff);
 
   for (int i = 0; i < 4; i ++) {
     if (actSpeed[i] < 0 )
@@ -359,7 +364,6 @@ void checkIndividual (int motor, int* actSpeed) {
   if (motor == 3)
     analogWrite(BL_MOTOR, actSpeed[3]);
 }
-
 
 void runIndividual (int* actSpeed) {
   analogWrite(FL_MOTOR, actSpeed[0]);
