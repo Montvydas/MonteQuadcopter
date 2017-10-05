@@ -17,12 +17,14 @@ class ButterFilter
     float filter(float);
     float getCutoff();
     float getFs();
+    float getLastFiltered();
     
     private:
     float v[3];
     float a[3];
     float cutoff;
     float fs;
+    float lastFiltered;
 };
 
 #endif
