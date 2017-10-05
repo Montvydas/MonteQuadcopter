@@ -5,25 +5,24 @@
 
 #include "Arduino.h"
 #include "ButterFilter.h"
-#include "math.h"
-
-#define PI 3.141592
 
 // constructor
 ButterFilter::ButterFilter()
 {
-    v = [0, 0, 0];
+    this->v[0] = 0;
+    this->v[1] = 0;
+    this->v[2] = 0;
 }
 
 // setup out filter
-void ButterFilter::setup(float cutoff, float fs)
+void ButterFilter::begin(float cutoff, float fs)
 {
     this->cutoff = cutoff;
     this->fs = fs;
     
-    float f = math.tan(PI * cutoff / fs);
+    float f = tan(PI * cutoff / fs);
     float f2 = f * f;
-    sq2 = math.sqrt(2);
+    float sq2 = sqrt(2);
     
     float a0 = 1 + sq2 * f + f2;
     
@@ -37,6 +36,16 @@ void ButterFilter::setup(float cutoff, float fs)
 float* ButterFilter::getCoeffs()
 {
     return a;
+}
+
+float ButterFilter::getCutoff()
+{
+    return this->cutoff;
+}
+
+float ButterFilter::getFs()
+{
+    return this->fs;
 }
 
 // Is used to apply a filter and get a new value
