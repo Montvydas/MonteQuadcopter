@@ -1,62 +1,74 @@
 #include <Arduino.h>
 #include <SoftwareSerial.h>
+#include <Quadcopter.h>
+
+#define FL 3
+#define FR 9
+#define BL 11
+#define BR 10
+
+Quadcopter quad(FL, FR, BL, BR);
 
 SoftwareSerial mySerial (7, 8); //RX, TX
 
-#define FL_MOTOR 3
-#define FR_MOTOR 9
-#define BR_MOTOR 10
-#define BL_MOTOR 11
+int mySpeed[] = {20, 20, 20, 20};
 
-int speed = 40;
+void printCurrentSpeed();
+
 void setup() {
-  pinMode(FL_MOTOR, OUTPUT);
-  pinMode(FR_MOTOR, OUTPUT);
-  pinMode(BR_MOTOR, OUTPUT);
-  pinMode(BL_MOTOR, OUTPUT);
-
   mySerial.begin(9600);
-  //  Serial.begin(9600);
+  Serial.begin(9600);
+
+  Serial.println("setConstantSpeed");
+  quad.setConstantSpeed(15);
+  printCurrentSpeed();
+  delay(1000);
+
+  Serial.println("arm");
+  quad.arm();
+  printCurrentSpeed();
+  delay(1000);
+
+  Serial.println("disarm");
+  quad.disarm();
+  printCurrentSpeed();
+  delay(1000);
+
+  Serial.println("setSpeed");
+  quad.setSpeed(mySpeed);
+  printCurrentSpeed();
+  delay(1000);
+
+  Serial.println("setSingleMotor");
+  quad.setSingleMotor(0);
+  printCurrentSpeed();
+  delay(1000);
+
+  Serial.println("getStabilisedSpeed");
+  quad.getStabilisedSpeed(mySpeed, 15.2, -10.6);
+  printCurrentSpeed();
+  delay(1000);
 }
 
 
 void loop() {
   if (mySerial.available()) {
     int myReading = mySerial.parseInt();
-    setSpeedForAll(myReading);
-    // checkIndividualMotor(myReading);     // Is used to check which motor is which
-    while (mySerial.available())  //flushing anything that wasn't read
-      mySerial.read();
+    
+    quad.setConstantSpeed(myReading);
+    while (mySerial.available() && mySerial.read());  //flushing anything that wasn't read
   }
 }
 
-void setSpeedForAll(int val) {
-  analogWrite(FL_MOTOR, val);
-  analogWrite(FR_MOTOR, val);
-  analogWrite(BR_MOTOR, val);
-  analogWrite(BL_MOTOR, val);
-}
-
-void checkIndividualMotor(int motor) {
-  analogWrite(FL_MOTOR, 0);
-  analogWrite(FR_MOTOR, 0);
-  analogWrite(BR_MOTOR, 0);
-  analogWrite(BL_MOTOR, 0);
-
-  switch(motor){
-    case 0:
-      analogWrite(FL_MOTOR, 10);
-      break;
-    case 1:
-      analogWrite(FR_MOTOR, 10);
-      break;
-    case 2:
-      analogWrite(BR_MOTOR, 10);
-      break;
-    case 3:
-      analogWrite(BL_MOTOR, 10);
-      break;
-    default:
-      break;
+void printCurrentSpeed(){
+  int* currSpeed = quad.getSpeed();
+  for (int i = 0; i < 4; i++){
+    Serial.print(currSpeed[i]);
+    Serial.print(" ");
+    mySerial.print(currSpeed[i]);
+    mySerial.print(" ");    
   }
+  Serial.println();
+  mySerial.println();
 }
+
