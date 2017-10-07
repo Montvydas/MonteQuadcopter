@@ -13,17 +13,17 @@
 class Quadcopter
 {
     public:
-    Quadcopter();
+    Quadcopter(int, int, int, int);
     void setConstantSpeed(int);
     void arm();
     void disarm();
     void setSpeed(int*);
     void setSingleMotor(int);
     int* getSpeed();
-    int* getStabilisedSpeed();
+    int* getStabilisedSpeed(int*, float, float);
     private:
-      speed[4];
-      motor[4];
+      int speed[4];
+      int motor[4];
 };
 
 #endif
