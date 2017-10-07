@@ -39,6 +39,8 @@ MPU6050 mpu;
 #define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
 #define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
 bool blinkState = false;
+long prevTime = micros();
+long currTime = micros();
 
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -73,6 +75,10 @@ void dmpDataReady() {
 // ================================================================
 
 void setup() {
+//./MPU6050_6Axis_MotionApps20.h:305:    0x02,   0x16,   0x02,   0x00, 0x01                // D_0_22 inv_set_fifo_rate
+// change last 0x01 to 0x00 to change interrupt rate from 100Hz to 200Hz,
+// which might work better for quadcopter but has more noise it said..
+  
     // join I2C bus (I2Cdev library doesn't do this automatically)
     #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
         Wire.begin();
@@ -195,6 +201,19 @@ void loop() {
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetYawPitchRoll(angles, &q, &gravity);
         #endif
+
+        Serial.print("y=");
+        Serial.print(angles[0] * 180/PI);
+        Serial.print(" p=");
+        Serial.print(angles[1] * 180/PI);
+        Serial.print(" r=");
+        Serial.println(angles[2] * 180/PI);
+
+//        Serial.print("delay (us)= ");
+
+//        currTime = micros();
+//        Serial.println(currTime-prevTime);
+//        prevTime = currTime;
    
         // blink LED to indicate activity
         blinkState = !blinkState;
