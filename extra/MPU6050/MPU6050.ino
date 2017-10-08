@@ -97,6 +97,8 @@ PID rollPID(&pitchInput, &pitchOutput, &pitchSetpoint, consKp, consKi, consKd, D
 // ===                 Communication stuff                      ===
 // ================================================================
 
+SoftwareSerial bluetooth (7, 8); //RX, TX
+
 // ================================================================
 // ===               INTERRUPT DETECTION ROUTINE                ===
 // ================================================================
@@ -120,7 +122,13 @@ void setup() {
     #endif
 
     Serial.begin(115200);
+    bluetooth.begin(115200);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
+
+    // enable Arduino interrupt detection
+    Serial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
+    attachInterrupt(0, dmpDataReady, RISING);
+    detachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN));
 
     // Initialise settings for IMU
     initIMU();
@@ -139,15 +147,15 @@ void loop() {
     if (!dmpReady) return;
 
     // wait for MPU interrupt or extra packet(s) available
-    while (!mpuInterrupt && fifoCount < packetSize) {
-        if (Serial.available() > 0) 
+    while ((!mpuInterrupt && fifoCount < packetSize) || bluetooth.available() > 0) {
+        if (bluetooth.available() > 0) 
         {
-          char mode = Serial.read();  
+          char mode = bluetooth.read();  
           if (mode == 'c'){
             calibrateIMU();
           }
-//          while (!Serial.available());                 // wait for data
-          while (Serial.available() && Serial.read());   // empty buffer
+//          while (!bluetooth.available());                 // wait for data
+          while (bluetooth.available() && bluetooth.read());   // empty buffer
         }
         // if you are really paranoid you can frequently test in between other
         // stuff to see if mpuInterrupt is true, and if so, "break;" from the

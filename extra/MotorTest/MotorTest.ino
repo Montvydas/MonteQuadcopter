@@ -18,36 +18,7 @@ void printCurrentSpeed();
 void setup() {
   mySerial.begin(9600);
   Serial.begin(9600);
-
-  Serial.println("setConstantSpeed");
-  quad.setConstantSpeed(15);
-  printCurrentSpeed();
-  delay(1000);
-
-  Serial.println("arm");
-  quad.arm();
-  printCurrentSpeed();
-  delay(1000);
-
-  Serial.println("disarm");
-  quad.disarm();
-  printCurrentSpeed();
-  delay(1000);
-
-  Serial.println("setSpeed");
-  quad.setSpeed(mySpeed);
-  printCurrentSpeed();
-  delay(1000);
-
-  Serial.println("setSingleMotor");
-  quad.setSingleMotor(0);
-  printCurrentSpeed();
-  delay(1000);
-
-  Serial.println("getStabilisedSpeed");
-  quad.getStabilisedSpeed(mySpeed, 15.2, -10.6);
-  printCurrentSpeed();
-  delay(1000);
+//  testMotors();
 }
 
 
@@ -56,6 +27,7 @@ void loop() {
     int myReading = mySerial.parseInt();
     
     quad.setConstantSpeed(myReading);
+    Serial.print(myReading);
     while (mySerial.available() && mySerial.read());  //flushing anything that wasn't read
   }
 }
@@ -70,5 +42,43 @@ void printCurrentSpeed(){
   }
   Serial.println();
   mySerial.println();
+}
+
+void testMotors(){
+    Serial.println("setConstantSpeed");
+  quad.setConstantSpeed(15);
+  printCurrentSpeed();
+  delay(2000);
+
+  Serial.println("arm");
+  quad.arm();
+  printCurrentSpeed();
+  delay(2000);
+
+  Serial.println("disarm");
+  quad.disarm();
+  printCurrentSpeed();
+  delay(2000);
+
+  Serial.println("setSpeed");
+  quad.setSpeed(mySpeed);
+  printCurrentSpeed();
+  delay(2000);
+
+  Serial.println("setSingleMotor");
+  quad.setSingleMotor(0);
+  printCurrentSpeed();
+  delay(2000);
+
+  Serial.println("getStabilisedSpeed");
+  quad.getStabilisedSpeed(mySpeed, 15.2, -10.6);
+  quad.setSpeed(quad.getSpeed());
+  printCurrentSpeed();
+  delay(2000);
+
+  Serial.println("disarm");
+  quad.disarm();
+  printCurrentSpeed();
+  delay(2000);
 }
 
