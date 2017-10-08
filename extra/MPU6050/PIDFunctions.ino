@@ -1,37 +1,3 @@
-#include <PID_v1.h>
-
-//Define Variables we'll be connecting to
-double rollSetpoint, rollInput, rollOutput;
-double pitchSetpoint, pitchInput, pitchOutput;
-
-double ypr[3];
-double yprOffset[3];
-
-//Define the aggressive and conservative Tuning Parameters
-double aggKp=4, aggKi=0.2, aggKd=1;
-double consKp=1, consKi=0.05, consKd=0.25;
-
-PID pitchPID(&rollInput, &rollOutput, &rollSetpoint, consKp, consKi, consKd, DIRECT);
-PID rollPID(&pitchInput, &pitchOutput, &pitchSetpoint, consKp, consKi, consKd, DIRECT);
-
-// Look into option of using Proportional on Measurement instead of Proportional on Erro!
-//PID pitchPID(&rollInput, &rollOutput, &rollSetpoint, consKp, consKi, consKd, P_ON_M, DIRECT);
-//PID rollPID(&pitchInput, &pitchOutput, &pitchSetpoint, consKp, consKi, consKd, P_ON_M, DIRECT);
-
-void initPID();
-void processPID();
-void setTunings(PID, double, double, double);
-
-void setup()
-{
-  initPID();
-}
-
-void loop()
-{
-  processPID();
-}
-
 void initPID()
 {
   //initialize the variables we're linked to
