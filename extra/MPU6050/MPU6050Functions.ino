@@ -1,8 +1,12 @@
 void initIMU()
 {
+  // TODO look into an option of increasing the DMP rate to 200Hz
   //./MPU6050_6Axis_MotionApps20.h:305:    0x02,   0x16,   0x02,   0x00, 0x01                // D_0_22 inv_set_fifo_rate
   // change last 0x01 to 0x00 to change interrupt rate from 100Hz to 200Hz,
   // which might work better for quadcopter but has more noise it said..
+
+  for (int i = 0; i < 4; i++)
+    yprOffset[i] = 0.0;
 
   // initialize device
   Serial.println(F("Initializing I2C devices..."));
@@ -24,6 +28,7 @@ void initIMU()
   devStatus = mpu.dmpInitialize();
 
   // supply your own gyro offsets here, scaled for min sensitivity
+  // TODO experiment with these values
   mpu.setXGyroOffset(220);
   mpu.setYGyroOffset(76);
   mpu.setZGyroOffset(-85);
@@ -96,19 +101,26 @@ void processIMU()
     #endif
 
     Serial.print("y=");
-    Serial.print(ypr[0] * 180/PI);
+    Serial.print((ypr[0] - yprOffset[0]) * 180/PI);
     Serial.print(" p=");
-    Serial.print(ypr[1] * 180/PI);
+    Serial.print((ypr[1] - yprOffset[1]) * 180/PI);
     Serial.print(" r=");
-    Serial.println(ypr[2] * 180/PI);
+    Serial.println((ypr[2] - yprOffset[2]) * 180/PI);
 
-//        Serial.print("delay (us)= ");
-
-//        currTime = micros();
-//        Serial.println(currTime-prevTime);
-//        prevTime = currTime;
+//    Serial.print("delay (us)= ");
+//
+//    currTime = micros();
+//    Serial.println(currTime-prevTime);
+//    prevTime = currTime;
     // blink LED to indicate activity
     blinkState = !blinkState;
     digitalWrite(LED_PIN, blinkState);
   }
 }
+
+void calibrateIMU()
+{
+  for (int i = 0; i < 4; i++)
+    yprOffset[i] = ypr[i];
+}
+

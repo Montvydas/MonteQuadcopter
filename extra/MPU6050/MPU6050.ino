@@ -1,7 +1,3 @@
-// I2C device class (I2Cdev) demonstration Arduino sketch for MPU6050 class using DMP (MotionApps v2.0)
-// 6/21/2012 by Jeff Rowberg <jeff@rowberg.net>
-// Updates should (hopefully) always be available at https://github.com/jrowberg/i2cdevlib
-
 /* ============================================
 I2Cdev device library code is placed under the MIT license
 Copyright (c) 2012 Jeff Rowberg
@@ -37,6 +33,9 @@ THE SOFTWARE.
 // ===                    MPU6050 Stuff                         ===
 // ================================================================
 
+long prevTime = micros();
+long currTime = micros();
+
 // Arduino Wire library is required if I2Cdev I2CDEV_ARDUINO_WIRE implementation
 // is used in I2Cdev.h
 #if I2CDEV_IMPLEMENTATION == I2CDEV_ARDUINO_WIRE
@@ -48,8 +47,6 @@ MPU6050 mpu;
 #define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
 #define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
 bool blinkState = false;
-long prevTime = micros();
-long currTime = micros();
 
 // MPU control/status vars
 bool dmpReady = false;  // set true if DMP init was successful
@@ -143,10 +140,18 @@ void loop() {
 
     // wait for MPU interrupt or extra packet(s) available
     while (!mpuInterrupt && fifoCount < packetSize) {
+        if (Serial.available() > 0) 
+        {
+          char mode = Serial.read();  
+          if (mode == 'c'){
+            calibrateIMU();
+          }
+//          while (!Serial.available());                 // wait for data
+          while (Serial.available() && Serial.read());   // empty buffer
+        }
         // if you are really paranoid you can frequently test in between other
         // stuff to see if mpuInterrupt is true, and if so, "break;" from the
         // while() loop to immediately process the MPU data
-
     }
 
     processIMU();
