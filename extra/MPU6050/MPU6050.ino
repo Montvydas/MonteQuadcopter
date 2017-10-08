@@ -54,8 +54,7 @@ uint8_t fifoBuffer[64]; // FIFO storage buffer
 Quaternion q;           // [w, x, y, z]         quaternion container
 VectorFloat gravity;    // [x, y, z]            gravity vector
 //float euler[3];         // [psi, theta, phi]    Euler angle container
-//float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
-float angles[3];        // Will use this instead of euler or ypr for testing purposes
+float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gravity vector
 
 // define which one to use, need to test which works best
 //#define OUTPUT_READABLE_EULER
@@ -205,24 +204,22 @@ void processIMU()
     fifoCount -= packetSize;
 
     #ifdef OUTPUT_READABLE_EULER
-      // display Euler angles in degrees
       mpu.dmpGetQuaternion(&q, fifoBuffer);
-      mpu.dmpGetEuler(angles, &q);
+      mpu.dmpGetEuler(ypr, &q);
     #endif
 
     #ifdef OUTPUT_READABLE_YAWPITCHROLL
-      // display Euler angles in degrees
       mpu.dmpGetQuaternion(&q, fifoBuffer);
       mpu.dmpGetGravity(&gravity, &q);
-      mpu.dmpGetYawPitchRoll(angles, &q, &gravity);
+      mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
     #endif
 
     Serial.print("y=");
-    Serial.print(angles[0] * 180/PI);
+    Serial.print(ypr[0] * 180/PI);
     Serial.print(" p=");
-    Serial.print(angles[1] * 180/PI);
+    Serial.print(ypr[1] * 180/PI);
     Serial.print(" r=");
-    Serial.println(angles[2] * 180/PI);
+    Serial.println(ypr[2] * 180/PI);
 
 //        Serial.print("delay (us)= ");
 
