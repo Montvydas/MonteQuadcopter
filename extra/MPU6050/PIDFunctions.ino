@@ -1,3 +1,16 @@
+#define PID_SIZE 5
+#define PID_ROLL_RATE   0
+#define PID_ROLL_ANGLE  1
+#define PID_PITCH_RATE  2
+#define PID_PITCH_ANGLE 3
+#define PID_YAW_RATE    4
+
+double pidInputs[5];
+double pidOutputs[5];
+double pidSetpoints[5];
+
+PID pitchRatePID(&pidInputs[PID_PITCH_RATE], &pidOutputs[PID_PITCH_RATE],&pidSetpoints[PID_PITCH_RATE],1.86, 0.36, 0.0, REVERSE);
+
 void initPID()
 {
   //initialize the variables we're linked to
@@ -12,8 +25,15 @@ void initPID()
   pitchPID.SetMode(AUTOMATIC);
   rollPID.SetMode(AUTOMATIC);
 
-  pitchPID.SetOutputLimits(-20, 20);
-  rollPID.SetOutputLimits(-20, 20);
+  pitchPID.SetOutputLimits(-50, 50);
+  rollPID.SetOutputLimits(-50, 50);
+
+  pitchPID.SetSampleTime(5);
+  rollPID.SetSampleTime(5);
+}
+
+void processRatePID(){
+  
 }
 
 void processPID()
@@ -22,14 +42,45 @@ void processPID()
   // assign to PID variables -> in the future maybe jsut assign directly when creating PID?
   // Also remove offsets
 //  yawInput = (ypr[0] - yprOffset[0]) * 180 / PI;
-  pitchInput = (ypr[1] - yprOffset[1]) * 180 / PI;
-  rollInput = (ypr[2] - yprOffset[2]) * 180 / PI;
+  pitchInput = pitchFilter.filter((ypr[1] - yprOffset[1]) * 180 / PI);
+  rollInput = rollFilter.filter((ypr[2] - yprOffset[2]) * 180 / PI);
 
-  setTunings(pitchPID, pitchSetpoint, pitchInput, 10);
-  setTunings(rollPID, rollSetpoint, rollInput, 10);
+//  setTunings(pitchPID, pitchSetpoint, pitchInput, 10);
+//  setTunings(rollPID, rollSetpoint, rollInput, 10);
 
-  pitchPID.Compute();
-  rollPID.Compute();
+  bool isPitchCalculated = pitchPID.Compute();
+  bool isRollCalculated = rollPID.Compute();
+
+  if (!quad.isArmed()){
+//    Serial.print("pitchOutput=");
+//    Serial.print(pitchOutput);
+//    Serial.print("   rollOutput=");
+//    Serial.print(rollOutput);
+//    Serial.println();
+  }
+
+
+  if (quad.isArmed() && (isPitchCalculated || isRollCalculated)){
+    int mySpeed[4];
+    quad.getStabilisedSpeed(targetSpeed, mySpeed, 0, pitchOutput);
+    quad.setSpeed(mySpeed);
+//    Serial.print("  1=");
+//    Serial.print(mySpeed[0]);
+//    Serial.print("  2=");
+//    Serial.print(mySpeed[1]);
+//    Serial.print("  3=");
+//    Serial.print(mySpeed[2]);
+//    Serial.print("  4=");
+//    Serial.print(mySpeed[3]);
+  } else {
+//    Serial.print("  y=");
+//    Serial.print((ypr[0] - yprOffset[0]) * 180/PI);
+//    Serial.print("  p=");
+//    Serial.print((ypr[1] - yprOffset[1]) * 180/PI);
+//    Serial.print("  r=");
+//    Serial.print((ypr[2] - yprOffset[2]) * 180/PI);
+  }
+//  Serial.println();
 }
 
 void setTunings(PID pid, double setpoint, double input, double gapOffset)

@@ -9,22 +9,22 @@ void initIMU()
     yprOffset[i] = 0.0;
 
   // initialize device
-  Serial.println(F("Initializing I2C devices..."));
+//  Serial.println(F("Initializing I2C devices..."));
   mpu.initialize();
   pinMode(INTERRUPT_PIN, INPUT);
 
   // verify connection
-  Serial.println(F("Testing device connections..."));
-  Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
+//  Serial.println(F("Testing device connections..."));
+//  Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
   // wait for ready
-  Serial.println(F("\nSend any character to begin DMP programming and demo: "));
+//  Serial.println(F("\nSend any character to begin DMP programming and demo: "));
   while (Serial.available() && Serial.read()); // empty buffer
-  while (!Serial.available());                 // wait for data
-  while (Serial.available() && Serial.read()); // empty buffer again
+//  while (!Serial.available());                 // wait for data
+//  while (Serial.available() && Serial.read()); // empty buffer again
 
   // load and configure the DMP
-  Serial.println(F("Initializing DMP..."));
+//  Serial.println(F("Initializing DMP..."));
   devStatus = mpu.dmpInitialize();
 
   // supply your own gyro offsets here, scaled for min sensitivity
@@ -37,12 +37,11 @@ void initIMU()
   // make sure it worked (returns 0 if so)
   if (devStatus == 0) {
       // turn on the DMP, now that it's ready
-      Serial.println(F("Enabling DMP..."));
+//      Serial.println(F("Enabling DMP..."));
       mpu.setDMPEnabled(true);
 
-      // enable Arduino interrupt detection
-      Serial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
-      attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), dmpDataReady, RISING);
+      attachAnalogueInterrupt();
+      
       mpuIntStatus = mpu.getIntStatus();
 
       // set our DMP Ready flag so the main loop() function knows it's okay to use it
@@ -56,10 +55,15 @@ void initIMU()
       // 1 = initial memory load failed
       // 2 = DMP configuration updates failed
       // (if it's going to break, usually the code will be 1)
-      Serial.print(F("DMP Initialization failed (code "));
-      Serial.print(devStatus);
-      Serial.println(F(")"));
+//      Serial.print(F("DMP Initialization failed (code "));
+//      Serial.print(devStatus);
+//      Serial.println(F(")"));
   }
+}
+
+
+void processRateIMU(){
+  mpu.getRotation(&gx, &gy, &gz);
 }
 
 void processIMU()
@@ -100,6 +104,12 @@ void processIMU()
       mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
     #endif
 
+//    Serial.print(ypr[1]* 180/PI);
+//    Serial.print(" ");
+//    Serial.print(ypr[2]* 180/PI);
+//    Serial.print(" ");
+//    Serial.println(filter.filter(ypr[1]* 180/PI));
+
 //    Serial.print("y=");
 //    Serial.print((ypr[0] - yprOffset[0]) * 180/PI);
 //    Serial.print(" p=");
@@ -107,11 +117,11 @@ void processIMU()
 //    Serial.print(" r=");
 //    Serial.println((ypr[2] - yprOffset[2]) * 180/PI);
 
-    Serial.print("delay (us)= ");
-
-    currTime = micros();
-    Serial.println(currTime-prevTime);
-    prevTime = currTime;
+//    Serial.print("delay (us)= ");
+//
+//    currTime = micros();
+//    Serial.println(currTime-prevTime);
+//    prevTime = currTime;
     // blink LED to indicate activity
     blinkState = !blinkState;
     digitalWrite(LED_PIN, blinkState);
@@ -123,5 +133,22 @@ void calibrateIMU()
   for (int i = 0; i < 4; i++)
     yprOffset[i] = ypr[i];
   bluetooth.println(F("Calibrated"));  
+}
+
+void attachAnalogueInterrupt(){
+        // enable Arduino interrupt detection
+//      Serial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
+      // this was previously and it doesnt work on anlogue pins
+//      attachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN), dmpDataReady, RISING);
+
+      // Firstly go to SoftwareSerial.cpp and comment up these lines
+      //#if defined(PCINT1_vect)
+      //ISR(PCINT1_vect, ISR_ALIASOF(PCINT0_vect));
+      //#endif
+      // as they are trying to use SoftwareSerial interrupts onto Analogue pins
+      // howeever we dont use them anyway, we want to use them differently..
+      // and software serial is basically used together with bluetooth so we need it.
+      pinMode(INTERRUPT_PIN, INPUT_PULLUP);
+      attachPCINT(digitalPinToPCINT(INTERRUPT_PIN), dmpDataReady, RISING);
 }
 

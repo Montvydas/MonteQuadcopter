@@ -9,6 +9,7 @@
 // constructor
 Quadcopter::Quadcopter(int m0, int m1, int m2, int m3)
 {
+  this->armed = false;
   // Front Left
   this->motor[0] = m0;
   // Front Right
@@ -37,11 +38,13 @@ void Quadcopter::setConstantSpeed(int speed)
 
 void Quadcopter::arm()
 {
+  this->armed = true;
   this->setConstantSpeed(ARM_SPEED);
 }
 
 void Quadcopter::disarm()
 {
+  this->armed = false;
   this->setConstantSpeed(0);
 }
 
@@ -54,7 +57,7 @@ void Quadcopter::setSpeed(int* speed)
   }
 }
 
-void Quadcopter::setSingleMotor(int motor_index)
+void Quadcopter::setSingleMotor(int motor_index, int speed)
 {
   // firstly disarm
   this->disarm();
@@ -62,8 +65,8 @@ void Quadcopter::setSingleMotor(int motor_index)
   if (motor_index >= 0 && motor_index <= 3)
   {
     // this could be improved to use setSpeed instead of reinventing a function
-    analogWrite(this->motor[motor_index], ARM_SPEED);
-    this->speed[motor_index] = ARM_SPEED;
+    analogWrite(this->motor[motor_index], speed);
+    this->speed[motor_index] = speed;
   }
 }
 
@@ -72,7 +75,12 @@ int* Quadcopter::getSpeed()
   return this->speed;
 }
 
-int* Quadcopter::getStabilisedSpeed(int* speed, float rollDiff, float pitchDiff){
+bool Quadcopter::isArmed()
+{
+  return this->armed;
+}
+
+void Quadcopter::getStabilisedSpeed(int* speed, int* actSpeed, float rollDiff, float pitchDiff){
   //each motor has actual Speed and speed at which we want them to fly...
   //actual Speed is calculated as follows +- half rollDiff +- half pitchDiff
   this->speed[0] = (int) speed[0] + (rollDiff) - (pitchDiff);
@@ -86,6 +94,8 @@ int* Quadcopter::getStabilisedSpeed(int* speed, float rollDiff, float pitchDiff)
       this->speed[i] = 0;
     if (this->speed[i] > 255)
       this->speed[i] = 255;
+
+    actSpeed[i] = this->speed[i];
   }
   return this->speed;
 }

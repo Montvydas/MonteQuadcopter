@@ -28,6 +28,7 @@ THE SOFTWARE.
 #include "BatteryLevel.h"
 #include "SoftwareSerial.h"
 #include "ButterFilter.h"
+#include "PinChangeInterrupt.h"
 
 // ================================================================
 // ===                    MPU6050 Stuff                         ===
@@ -44,7 +45,7 @@ long currTime = micros();
 
 MPU6050 mpu;
 
-#define INTERRUPT_PIN 2  // use pin 2 on Arduino Uno & most boards
+#define INTERRUPT_PIN A2  // use analogue pin A2 -> I know, very strange but easier to wire up
 #define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
 bool blinkState = false;
 
@@ -64,19 +65,39 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll container and gra
 double yprOffset[3];    // offset to make ypr initially be all zero
 
 // define which one to use, need to test which works best
-//#define OUTPUT_READABLE_EULER
-#define OUTPUT_READABLE_YAWPITCHROLL
+#define OUTPUT_READABLE_EULER
+//#define OUTPUT_READABLE_YAWPITCHROLL
+
+// ================================================================
+// ===                    Filter stuff                          ===
+// ================================================================
+
+ButterFilter pitchFilter;
+ButterFilter rollFilter;
+
+// ================================================================
+// ===                    Motors stuff                          ===
+// ================================================================
+#define FL 3
+#define FR 9
+#define BL 11
+#define BR 10
+
+Quadcopter quad(FL, FR, BL, BR);
+int targetSpeed[4];
 
 // ================================================================
 // ===                    PID stuff                             ===
 // ================================================================
 //Define Variables we'll be connecting to
+int16_t gx, gy, gz;
+
 double rollSetpoint, rollInput, rollOutput;
 double pitchSetpoint, pitchInput, pitchOutput;
 
 //Define the aggressive and conservative Tuning Parameters
 double aggKp=4, aggKi=0.2, aggKd=1;
-double consKp=1, consKi=0.05, consKd=0.25;
+double consKp=0.98, consKi=0.08, consKd=0.0;
 
 PID pitchPID(&rollInput, &rollOutput, &rollSetpoint, consKp, consKi, consKd, DIRECT);
 PID rollPID(&pitchInput, &pitchOutput, &pitchSetpoint, consKp, consKi, consKd, DIRECT);
@@ -84,10 +105,6 @@ PID rollPID(&pitchInput, &pitchOutput, &pitchSetpoint, consKp, consKi, consKd, D
 // Look into option of using Proportional on Measurement instead of Proportional on Erro!
 //PID pitchPID(&rollInput, &rollOutput, &rollSetpoint, consKp, consKi, consKd, P_ON_M, DIRECT);
 //PID rollPID(&pitchInput, &pitchOutput, &pitchSetpoint, consKp, consKi, consKd, P_ON_M, DIRECT);
-
-// ================================================================
-// ===                    Motors stuff                          ===
-// ================================================================
 
 // ================================================================
 // ===                 Battery Level stuff                      ===
@@ -105,7 +122,10 @@ SoftwareSerial bluetooth (7, 8); //RX, TX
 
 volatile bool mpuInterrupt = false;     // indicates whether MPU interrupt pin has gone high
 void dmpDataReady() {
-    mpuInterrupt = true;
+//  if (digitalRead(A0)==1)  Serial.println("A0");
+//  if (digitalRead(A1)==1)  Serial.println("A1");
+//  if (digitalRead(A2)==1)  {Serial.println("A2");}
+  mpuInterrupt = true;
 }
 
 // ================================================================
@@ -124,15 +144,13 @@ void setup() {
     Serial.begin(115200);
     bluetooth.begin(115200);
     while (!Serial); // wait for Leonardo enumeration, others continue immediately
-
-    // enable Arduino interrupt detection
-    Serial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
-    attachInterrupt(0, dmpDataReady, RISING);
-    detachInterrupt(digitalPinToInterrupt(INTERRUPT_PIN));
-
+    
     // Initialise settings for IMU
     initIMU();
     initPID();
+
+    pitchFilter.begin(12, 200);
+    rollFilter.begin(12, 200);
 
     // configure LED for output
     pinMode(LED_PIN, OUTPUT);
@@ -147,21 +165,90 @@ void loop() {
     if (!dmpReady) return;
 
     // wait for MPU interrupt or extra packet(s) available
-    while ((!mpuInterrupt && fifoCount < packetSize) || bluetooth.available() > 0) {
+    while ((!mpuInterrupt && fifoCount < packetSize) || (Serial.available() > 0 || bluetooth.available() > 0)) {
         if (bluetooth.available() > 0) 
         {
+          /*
+        }
           char mode = bluetooth.read();  
-          if (mode == 'c'){
+          switch(mode){
+          case 'c':
             calibrateIMU();
-          }
+            break;
+          case 'a':
+            quad.arm();
+            break;
+          case 'd':
+            quad.disarm();
+            break;
+          case '0':
+            setTargetSpeed(0);
+            break;
+          case '1':
+            setTargetSpeed(50);
+            break;          
+          case '2':
+            setTargetSpeed(100);
+            break;            
+          case '3':
+            setTargetSpeed(120);
+            break;    
+          case '4':
+            setTargetSpeed(150);
+            break;                   
+          case '5':
+            setTargetSpeed(180);
+            break;          
+          case 'P':
+             mode = Serial.read();  
+             if (mode == '+')
+               consKp += 0.1;
+             if (mode == '-')
+               consKp -= 0.1;
+             pitchPID.SetTunings(consKp, consKi, consKd);
+//          Serial.print("kp=");
+//          Serial.println(consKp);
+          break;
+          case 'I':
+             mode = Serial.read();  
+             if (mode == '+')
+               consKi += 0.01;
+             if (mode == '-')
+               consKi -= 0.01;
+//             Serial.print("ki=");
+//             Serial.println(consKi);
+             pitchPID.SetTunings(consKp, consKi, consKd);
+              break;
+          case 'D':
+             mode = Serial.read();  
+             if (mode == '+')
+               consKd += 0.001;
+             if (mode == '-')
+               consKd -= 0.001;
+//             Serial.print("kd=");
+//             Serial.println(consKd);
+             pitchPID.SetTunings(consKp, consKi, consKd);
+             break;
+          } 
+          */
+          
 //          while (!bluetooth.available());                 // wait for data
+          while (Serial.available() && Serial.read());   // empty buffer
           while (bluetooth.available() && bluetooth.read());   // empty buffer
         }
         // if you are really paranoid you can frequently test in between other
         // stuff to see if mpuInterrupt is true, and if so, "break;" from the
         // while() loop to immediately process the MPU data
+//        processPID();
+        processRatePID();
     }
 
-    processIMU();
-    processPID();
+    processRateIMU();
+//    processIMU();
 }
+
+void setTargetSpeed(int one){
+  for (int i = 0; i < 4; i++)
+    targetSpeed[i] = one;
+}
+

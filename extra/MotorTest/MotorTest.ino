@@ -16,7 +16,7 @@ int mySpeed[] = {20, 20, 20, 20};
 void printCurrentSpeed();
 
 void setup() {
-  mySerial.begin(9600);
+  mySerial.begin(115200);
   Serial.begin(9600);
 //  testMotors();
 }

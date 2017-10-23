@@ -18,12 +18,14 @@ class Quadcopter
     void arm();
     void disarm();
     void setSpeed(int*);
-    void setSingleMotor(int);
+    void setSingleMotor(int, int);
     int* getSpeed();
-    int* getStabilisedSpeed(int*, float, float);
+    void getStabilisedSpeed(int*, int*, float, float);
+    bool isArmed();
     private:
       int speed[4];
       int motor[4];
+      bool armed;
 };
 
 #endif

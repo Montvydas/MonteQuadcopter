@@ -4,7 +4,7 @@ BatteryLevel batteryLevel(0);    //this refers to anlog pin A0
 
 void setup(void)
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
 }
 
 void loop(void)
